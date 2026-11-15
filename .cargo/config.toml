@@ -1,2 +1,8 @@
 [target.x86_64-pc-windows-gnu]
 linker = "x86_64-w64-mingw32-gcc"
+
+[env]
+# Time zones compiled into the exe: only those used by the built-in cities in
+# src/model.rs (Africa and South America are left out). Keep both in sync;
+# `cargo test` fails if a built-in city's zone is missing here.
+CHRONO_TZ_TIMEZONE_FILTER = "^(Europe/(London|Dublin|Lisbon|Paris|Brussels|Amsterdam|Berlin|Zurich|Rome|Madrid|Vienna|Prague|Warsaw|Budapest|Copenhagen|Stockholm|Oslo|Helsinki|Athens|Istanbul|Kyiv|Moscow)|Asia/(Dubai|Qatar|Riyadh|Jerusalem|Tehran|Karachi|Kolkata|Dhaka|Bangkok|Ho_Chi_Minh|Kuala_Lumpur|Singapore|Jakarta|Manila|Hong_Kong|Taipei|Shanghai|Seoul|Tokyo)|Australia/(Perth|Adelaide|Brisbane|Sydney|Melbourne)|Pacific/(Auckland|Guam|Honolulu)|America/(Anchorage|Los_Angeles|Vancouver|Phoenix|Denver|Chicago|Mexico_City|New_York|Toronto)|Etc/UTC)$"

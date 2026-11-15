@@ -10,7 +10,7 @@ BOS 19:05 −1      ^ ⌔ ♪ ▭    9:05
                               2026/11/14
 ```
 
-- 管理者権限・インストール不要。exe 1つ（約1.5MB）で動きます。
+- 管理者権限・インストール不要。exe 1つ（約640KB）で動きます。
 - explorer.exe には手を入れません（タスクバーの上に透明な小窓を重ねて表示しているだけです）。
 - 全画面のアプリや動画の表示中は自動で隠れます。
 
@@ -39,19 +39,25 @@ cities = STO, LON, BOS
 right_margin =
 ```
 
-| ラベル | 都市 | タイムゾーン |
-|---|---|---|
-| STO | ストックホルム | Europe/Stockholm |
-| LON | ロンドン | Europe/London |
-| BOS | ボストン | America/New_York |
-| SIN | シンガポール | Asia/Singapore |
-| NYC | ニューヨーク | America/New_York |
-| LAX | ロサンゼルス | America/Los_Angeles |
-| TYO | 東京 | Asia/Tokyo |
-| UTC | 協定世界時 | Etc/UTC |
+都市は3文字のコード（空港の都市コード）で、上から順に最大3つ書きます。夏時間は自動で反映されます。
+アフリカと南米の都市は収録していません。
 
-一覧にない都市は `PAR=Europe/Paris` のように「ラベル=IANA名」で書けます。最大3つです。
-夏時間は自動で反映されます。
+| 地域 | 使える都市 |
+|---|---|
+| ヨーロッパ | LON ロンドン / DUB ダブリン / LIS リスボン / PAR パリ / BRU ブリュッセル / AMS アムステルダム / FRA フランクフルト / BER ベルリン / MUC ミュンヘン / ZRH チューリッヒ / MIL ミラノ / ROM ローマ / MAD マドリード / BCN バルセロナ / VIE ウィーン / PRG プラハ / WAW ワルシャワ / BUD ブダペスト / CPH コペンハーゲン / STO ストックホルム / OSL オスロ / HEL ヘルシンキ / ATH アテネ / IST イスタンブール / IEV キーウ / MOW モスクワ |
+| 中東・南アジア | DXB ドバイ / DOH ドーハ / RUH リヤド / TLV テルアビブ / THR テヘラン / KHI カラチ / DEL デリー / BOM ムンバイ / BLR ベンガルール / DAC ダッカ |
+| 東南アジア・東アジア | BKK バンコク / HAN ハノイ / SGN ホーチミン / KUL クアラルンプール / SIN シンガポール / JKT ジャカルタ / MNL マニラ / HKG 香港 / TPE 台北 / SHA 上海 / BJS 北京 / SZX 深圳 / SEL ソウル / TYO 東京 |
+| オセアニア・太平洋 | PER パース / ADL アデレード / BNE ブリスベン / SYD シドニー / MEL メルボルン / AKL オークランド / GUM グアム / HNL ホノルル |
+| 北米 | ANC アンカレッジ / SEA シアトル / SFO サンフランシスコ / LAX ロサンゼルス / YVR バンクーバー / PHX フェニックス / DEN デンバー / DFW ダラス / HOU ヒューストン / CHI シカゴ / MEX メキシコシティ / ATL アトランタ / MIA マイアミ / WAS ワシントンD.C. / NYC ニューヨーク / BOS ボストン / YTO トロント / YMQ モントリオール |
+| その他 | UTC 協定世界時 |
+
+表示名を変えたいときは `OSA=TYO` のように「表示名=都市」と書きます（表示名は4文字まで）。
+
+## 動作
+
+- 時刻は分の変わり目ちょうどに書き換わります。
+- タスクバーの位置、全画面アプリの有無、設定ファイルの変更は2秒ごとに確認します（Windows がほかの処理とまとめて実行できる設定にしています）。
+- 描画に使うフォントやビットマップは描き終わるたびに解放するので、常駐させてもメモリは増えません。
 
 ## ビルド（macOS / Linux からのクロスビルド）
 
@@ -62,6 +68,9 @@ cargo test                                              # 時差・日付ずれ�
 cargo build --release --target x86_64-pc-windows-gnu
 # → target/x86_64-pc-windows-gnu/release/minimal-clock.exe
 ```
+
+exe に入れるタイムゾーンは `.cargo/config.toml` の `CHRONO_TZ_TIMEZONE_FILTER` で絞っています。
+都市を追加するときは `src/model.rs` の `CITIES` とこの正規表現の両方に足してください（片方だけだと `cargo test` が失敗します）。
 
 ## 会社PCで動かないとき
 

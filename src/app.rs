@@ -21,8 +21,13 @@ use windows_sys::Win32::UI::WindowsAndMessaging::*;
 
 use crate::model::{self, Config, Row};
 
+/// Periodic check of taskbar position, z-order, full-screen apps and the settings file.
 const TIMER_ID: usize = 1;
-const TICK_MS: u32 = 500;
+const TICK_MS: u32 = 2000;
+/// Lets Windows batch the periodic wake-up with others (saves power).
+const TICK_TOLERANCE_MS: u32 = 200;
+/// One-shot timer re-armed for the next minute boundary, so the time flips on time.
+const MINUTE_TIMER_ID: usize = 2;
 const WM_APP_REFRESH: u32 = WM_APP + 1;
 const FALLBACK_MARGIN: i32 = 380; // logical px from the taskbar's right edge
 const RUN_KEY: *const u16 = w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
@@ -78,7 +83,7 @@ fn exe_path() -> PathBuf {
 
 fn load_config(path: &PathBuf) -> (Config, Option<SystemTime>) {
     if !path.exists() {
-        let _ = std::fs::write(path, model::DEFAULT_CONFIG.replace('\n', "\r\n"));
+        let _ = std::fs::write(path, model::default_config().replace('\n', "\r\n"));
     }
     let mtime = std::fs::metadata(path).and_then(|m| m.modified()).ok();
     let cfg = match std::fs::read(path) {
@@ -89,7 +94,7 @@ fn load_config(path: &PathBuf) -> (Config, Option<SystemTime>) {
 }
 
 fn save_margin(path: &PathBuf, margin: Option<i32>) {
-    let text = std::fs::read(path).map(|b| String::from_utf8_lossy(&b).into_owned()).unwrap_or_else(|_| model::DEFAULT_CONFIG.to_string());
+    let text = std::fs::read(path).map(|b| String::from_utf8_lossy(&b).into_owned()).unwrap_or_else(|_| model::default_config());
     let value = margin.map(|m| m.to_string()).unwrap_or_default();
     let _ = std::fs::write(path, model::set_key(&text, "right_margin", &value));
 }
@@ -156,7 +161,7 @@ pub fn run() {
         // Out-of-context hook (no DLL injection): re-raise ourselves quickly when
         // the foreground window changes, e.g. after the taskbar was clicked.
         SetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND, null_mut(), Some(win_event), 0, 0, WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
-        SetTimer(hwnd, TIMER_ID, TICK_MS, None);
+        SetCoalescableTimer(hwnd, TIMER_ID, TICK_MS, None, TICK_TOLERANCE_MS);
         tick();
 
         let mut msg: MSG = std::mem::zeroed();
@@ -409,7 +414,16 @@ fn hide(st: &mut State) {
 
 fn tick() {
     let force = FORCE.with(|f| f.replace(false));
-    let _ = with_state(|st| unsafe { tick_inner(st, force) });
+    let hwnd = with_state(|st| {
+        unsafe { tick_inner(st, force) };
+        st.hwnd
+    });
+    if let Some(hwnd) = hwnd {
+        // Re-arm the one-shot timer for just after the next minute boundary
+        // (SetTimer with the same id replaces the previous one).
+        let ms_into_minute = chrono::Utc::now().timestamp_millis().rem_euclid(60_000);
+        unsafe { SetTimer(hwnd, MINUTE_TIMER_ID, (60_000 - ms_into_minute + 50) as u32, None) };
+    }
 }
 
 unsafe fn tick_inner(st: &mut State, force: bool) {

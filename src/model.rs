@@ -6,31 +6,129 @@ use chrono_tz::Tz;
 
 pub const MAX_ROWS: usize = 3;
 
-/// Built-in cities: (label, IANA time zone, Japanese name for the settings file).
-pub const CITIES: &[(&str, &str, &str)] = &[
-    ("STO", "Europe/Stockholm", "ストックホルム"),
-    ("LON", "Europe/London", "ロンドン"),
-    ("BOS", "America/New_York", "ボストン"),
-    ("SIN", "Asia/Singapore", "シンガポール"),
-    ("NYC", "America/New_York", "ニューヨーク"),
-    ("LAX", "America/Los_Angeles", "ロサンゼルス"),
-    ("TYO", "Asia/Tokyo", "東京"),
-    ("UTC", "Etc/UTC", "協定世界時"),
+/// Built-in cities: (region, label, IANA time zone, Japanese name).
+/// Labels are IATA city codes. Africa and South America are intentionally left out.
+///
+/// Only the time zones used here are compiled into the exe: keep the
+/// `CHRONO_TZ_TIMEZONE_FILTER` regex in `.cargo/config.toml` in sync
+/// (the `all_builtin_cities_resolve` test fails otherwise).
+pub const CITIES: &[(&str, &str, &str, &str)] = &[
+    ("ヨーロッパ", "LON", "Europe/London", "ロンドン"),
+    ("ヨーロッパ", "DUB", "Europe/Dublin", "ダブリン"),
+    ("ヨーロッパ", "LIS", "Europe/Lisbon", "リスボン"),
+    ("ヨーロッパ", "PAR", "Europe/Paris", "パリ"),
+    ("ヨーロッパ", "BRU", "Europe/Brussels", "ブリュッセル"),
+    ("ヨーロッパ", "AMS", "Europe/Amsterdam", "アムステルダム"),
+    ("ヨーロッパ", "FRA", "Europe/Berlin", "フランクフルト"),
+    ("ヨーロッパ", "BER", "Europe/Berlin", "ベルリン"),
+    ("ヨーロッパ", "MUC", "Europe/Berlin", "ミュンヘン"),
+    ("ヨーロッパ", "ZRH", "Europe/Zurich", "チューリッヒ"),
+    ("ヨーロッパ", "MIL", "Europe/Rome", "ミラノ"),
+    ("ヨーロッパ", "ROM", "Europe/Rome", "ローマ"),
+    ("ヨーロッパ", "MAD", "Europe/Madrid", "マドリード"),
+    ("ヨーロッパ", "BCN", "Europe/Madrid", "バルセロナ"),
+    ("ヨーロッパ", "VIE", "Europe/Vienna", "ウィーン"),
+    ("ヨーロッパ", "PRG", "Europe/Prague", "プラハ"),
+    ("ヨーロッパ", "WAW", "Europe/Warsaw", "ワルシャワ"),
+    ("ヨーロッパ", "BUD", "Europe/Budapest", "ブダペスト"),
+    ("ヨーロッパ", "CPH", "Europe/Copenhagen", "コペンハーゲン"),
+    ("ヨーロッパ", "STO", "Europe/Stockholm", "ストックホルム"),
+    ("ヨーロッパ", "OSL", "Europe/Oslo", "オスロ"),
+    ("ヨーロッパ", "HEL", "Europe/Helsinki", "ヘルシンキ"),
+    ("ヨーロッパ", "ATH", "Europe/Athens", "アテネ"),
+    ("ヨーロッパ", "IST", "Europe/Istanbul", "イスタンブール"),
+    ("ヨーロッパ", "IEV", "Europe/Kyiv", "キーウ"),
+    ("ヨーロッパ", "MOW", "Europe/Moscow", "モスクワ"),
+    ("中東・南アジア", "DXB", "Asia/Dubai", "ドバイ"),
+    ("中東・南アジア", "DOH", "Asia/Qatar", "ドーハ"),
+    ("中東・南アジア", "RUH", "Asia/Riyadh", "リヤド"),
+    ("中東・南アジア", "TLV", "Asia/Jerusalem", "テルアビブ"),
+    ("中東・南アジア", "THR", "Asia/Tehran", "テヘラン"),
+    ("中東・南アジア", "KHI", "Asia/Karachi", "カラチ"),
+    ("中東・南アジア", "DEL", "Asia/Kolkata", "デリー"),
+    ("中東・南アジア", "BOM", "Asia/Kolkata", "ムンバイ"),
+    ("中東・南アジア", "BLR", "Asia/Kolkata", "ベンガルール"),
+    ("中東・南アジア", "DAC", "Asia/Dhaka", "ダッカ"),
+    ("東南アジア・東アジア", "BKK", "Asia/Bangkok", "バンコク"),
+    ("東南アジア・東アジア", "HAN", "Asia/Ho_Chi_Minh", "ハノイ"),
+    ("東南アジア・東アジア", "SGN", "Asia/Ho_Chi_Minh", "ホーチミン"),
+    ("東南アジア・東アジア", "KUL", "Asia/Kuala_Lumpur", "クアラルンプール"),
+    ("東南アジア・東アジア", "SIN", "Asia/Singapore", "シンガポール"),
+    ("東南アジア・東アジア", "JKT", "Asia/Jakarta", "ジャカルタ"),
+    ("東南アジア・東アジア", "MNL", "Asia/Manila", "マニラ"),
+    ("東南アジア・東アジア", "HKG", "Asia/Hong_Kong", "香港"),
+    ("東南アジア・東アジア", "TPE", "Asia/Taipei", "台北"),
+    ("東南アジア・東アジア", "SHA", "Asia/Shanghai", "上海"),
+    ("東南アジア・東アジア", "BJS", "Asia/Shanghai", "北京"),
+    ("東南アジア・東アジア", "SZX", "Asia/Shanghai", "深圳"),
+    ("東南アジア・東アジア", "SEL", "Asia/Seoul", "ソウル"),
+    ("東南アジア・東アジア", "TYO", "Asia/Tokyo", "東京"),
+    ("オセアニア・太平洋", "PER", "Australia/Perth", "パース"),
+    ("オセアニア・太平洋", "ADL", "Australia/Adelaide", "アデレード"),
+    ("オセアニア・太平洋", "BNE", "Australia/Brisbane", "ブリスベン"),
+    ("オセアニア・太平洋", "SYD", "Australia/Sydney", "シドニー"),
+    ("オセアニア・太平洋", "MEL", "Australia/Melbourne", "メルボルン"),
+    ("オセアニア・太平洋", "AKL", "Pacific/Auckland", "オークランド"),
+    ("オセアニア・太平洋", "GUM", "Pacific/Guam", "グアム"),
+    ("オセアニア・太平洋", "HNL", "Pacific/Honolulu", "ホノルル"),
+    ("北米", "ANC", "America/Anchorage", "アンカレッジ"),
+    ("北米", "SEA", "America/Los_Angeles", "シアトル"),
+    ("北米", "SFO", "America/Los_Angeles", "サンフランシスコ"),
+    ("北米", "LAX", "America/Los_Angeles", "ロサンゼルス"),
+    ("北米", "YVR", "America/Vancouver", "バンクーバー"),
+    ("北米", "PHX", "America/Phoenix", "フェニックス"),
+    ("北米", "DEN", "America/Denver", "デンバー"),
+    ("北米", "DFW", "America/Chicago", "ダラス"),
+    ("北米", "HOU", "America/Chicago", "ヒューストン"),
+    ("北米", "CHI", "America/Chicago", "シカゴ"),
+    ("北米", "MEX", "America/Mexico_City", "メキシコシティ"),
+    ("北米", "ATL", "America/New_York", "アトランタ"),
+    ("北米", "MIA", "America/New_York", "マイアミ"),
+    ("北米", "WAS", "America/New_York", "ワシントンD.C."),
+    ("北米", "NYC", "America/New_York", "ニューヨーク"),
+    ("北米", "BOS", "America/New_York", "ボストン"),
+    ("北米", "YTO", "America/Toronto", "トロント"),
+    ("北米", "YMQ", "America/Toronto", "モントリオール"),
+    ("その他", "UTC", "Etc/UTC", "協定世界時"),
 ];
 
-pub const DEFAULT_CONFIG: &str = "\
-; minimal-clock 設定ファイル（保存するとすぐ反映されます）
-;
-; cities: 表示する都市。上から順に最大3つ、カンマ区切り。
-;   使える都市: STO（ストックホルム） LON（ロンドン） BOS（ボストン） SIN（シンガポール）
-;               NYC（ニューヨーク） LAX（ロサンゼルス） TYO（東京） UTC（協定世界時）
-;   一覧にない都市は「ラベル=IANAタイムゾーン名」で指定できます。例: PAR=Europe/Paris
-cities = STO, LON, BOS
-
-; right_margin: タスクバー右端から時計の右端までの距離（100%表示時のpx）。空欄なら自動。
-;   時計をドラッグして左右に動かすと、ここが自動で書き換わります。
-right_margin =
-";
+/// Text of a new settings file, including the list of built-in cities.
+pub fn default_config() -> String {
+    let mut s = String::from(
+        "; minimal-clock 設定ファイル（保存するとすぐ反映されます）\n\
+         ;\n\
+         ; cities: 表示する都市。上から順に最大3つ、カンマ区切りで書きます。\n\
+         ;   表示名を変えたいときは「表示名=都市」と書きます。例: OSA=TYO\n\
+         ;\n\
+         ;   使える都市:\n",
+    );
+    let mut region = "";
+    let mut line: Vec<String> = Vec::new();
+    for (r, label, _, ja) in CITIES {
+        if *r != region || line.len() == 5 {
+            if !line.is_empty() {
+                s.push_str(&format!(";       {}\n", line.join(" / ")));
+                line.clear();
+            }
+            if *r != region {
+                s.push_str(&format!(";     {r}\n"));
+                region = r;
+            }
+        }
+        line.push(format!("{label} {ja}"));
+    }
+    if !line.is_empty() {
+        s.push_str(&format!(";       {}\n", line.join(" / ")));
+    }
+    s.push_str(
+        "cities = STO, LON, BOS\n\
+         \n\
+         ; right_margin: タスクバー右端から時計の右端までの距離（100%表示時のpx）。空欄なら自動。\n\
+         ;   時計をドラッグして左右に動かすと、ここが自動で書き換わります。\n\
+         right_margin =\n",
+    );
+    s
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct City {
@@ -47,15 +145,15 @@ pub struct Config {
 
 impl Default for Config {
     fn default() -> Self {
-        parse_config(DEFAULT_CONFIG)
+        parse_config(&default_config())
     }
 }
 
 fn lookup_builtin(label: &str) -> Option<Tz> {
     CITIES
         .iter()
-        .find(|(l, _, _)| l.eq_ignore_ascii_case(label))
-        .and_then(|(_, tz, _)| tz.parse().ok())
+        .find(|(_, l, _, _)| l.eq_ignore_ascii_case(label))
+        .and_then(|(_, _, tz, _)| tz.parse().ok())
 }
 
 fn parse_city(token: &str) -> Option<City> {
@@ -63,10 +161,13 @@ fn parse_city(token: &str) -> Option<City> {
     if token.is_empty() {
         return None;
     }
-    if let Some((label, tz)) = token.split_once('=') {
+    if let Some((label, target)) = token.split_once('=') {
+        // "OSA=TYO" (another built-in city) or "OSA=Asia/Tokyo" (a compiled-in IANA name).
         let label = label.trim();
         let label = if label.is_empty() { "?" } else { label };
-        Some(City { label: label.chars().take(4).collect(), tz: tz.trim().parse().ok() })
+        let target = target.trim();
+        let tz = lookup_builtin(target).or_else(|| target.parse().ok());
+        Some(City { label: label.chars().take(4).collect(), tz })
     } else {
         Some(City { label: token.to_ascii_uppercase().chars().take(4).collect(), tz: lookup_builtin(token) })
     }
@@ -181,26 +282,62 @@ mod tests {
         assert_eq!(c.right_margin, None);
     }
 
+    // Every built-in city's zone must be compiled in (see CHRONO_TZ_TIMEZONE_FILTER).
     #[test]
     fn all_builtin_cities_resolve() {
-        for (label, _, _) in CITIES {
-            assert!(lookup_builtin(label).is_some(), "{label}");
+        for (_, label, tz, _) in CITIES {
+            assert!(lookup_builtin(label).is_some(), "{label} -> {tz} is missing from CHRONO_TZ_TIMEZONE_FILTER");
+        }
+    }
+
+    #[test]
+    fn labels_are_unique_and_listed_in_settings_file() {
+        let text = default_config();
+        let mut seen = std::collections::HashSet::new();
+        for (_, label, _, ja) in CITIES {
+            assert!(seen.insert(*label), "duplicate label {label}");
+            assert!(text.contains(&format!("{label} {ja}")), "{label} not listed");
+        }
+    }
+
+    // The exe only carries the zones it needs; Africa and South America are left out.
+    #[test]
+    fn unused_zones_are_not_compiled_in() {
+        for name in ["Africa/Cairo", "Africa/Johannesburg", "America/Sao_Paulo", "America/Argentina/Buenos_Aires"] {
+            assert!(name.parse::<Tz>().is_err(), "{name} should be filtered out");
         }
     }
 
     #[test]
     fn parse_custom_and_limits() {
-        let c = parse_config("\u{feff}cities = sin, PAR=Europe/Paris, XXX, LAX, TYO\nright_margin = 120\n");
+        let c = parse_config("\u{feff}cities = sin, OSA=TYO, XXX, LAX, TYO\nright_margin = 120\n");
         let labels: Vec<_> = c.cities.iter().map(|c| c.label.as_str()).collect();
-        assert_eq!(labels, ["SIN", "PAR", "XXX"]);
-        assert_eq!(c.cities[1].tz, Some(chrono_tz::Europe::Paris));
+        assert_eq!(labels, ["SIN", "OSA", "XXX"]);
+        assert_eq!(c.cities[1].tz, Some(chrono_tz::Asia::Tokyo));
         assert_eq!(c.cities[2].tz, None);
         assert_eq!(c.right_margin, Some(120));
+        let c = parse_config("cities = Lon=Europe/London");
+        assert_eq!(c.cities[0], City { label: "Lon".into(), tz: Some(chrono_tz::Europe::London) });
+    }
+
+    // Spot checks across regions, including non-hour offsets and zones without DST.
+    #[test]
+    fn region_spot_checks() {
+        let c = parse_config("cities = DEL, THR, ADL");
+        let r = rows(&c, utc(2026, 1, 15, 0, 0), date(2026, 1, 15));
+        assert_eq!(r[0].time, "05:30"); // India UTC+5:30
+        assert_eq!(r[1].time, "03:30"); // Iran UTC+3:30
+        assert_eq!(r[2].time, "10:30"); // Adelaide summer UTC+10:30
+        let c = parse_config("cities = PHX, HNL, AKL");
+        let r = rows(&c, utc(2026, 7, 1, 0, 0), date(2026, 7, 1));
+        assert_eq!((r[0].time.as_str(), r[0].marker.as_str()), ("17:00", "\u{2212}1")); // Arizona: no DST, UTC-7
+        assert_eq!((r[1].time.as_str(), r[1].marker.as_str()), ("14:00", "\u{2212}1")); // Hawaii UTC-10
+        assert_eq!((r[2].time.as_str(), r[2].marker.as_str()), ("12:00", "")); // Auckland winter UTC+12
     }
 
     #[test]
     fn set_key_replaces_and_keeps_comments() {
-        let s = set_key(DEFAULT_CONFIG, "right_margin", "200");
+        let s = set_key(&default_config(), "right_margin", "200");
         assert!(s.contains("right_margin = 200"));
         assert!(s.contains("; cities:"));
         assert_eq!(parse_config(&s).right_margin, Some(200));
@@ -250,17 +387,16 @@ mod tests {
         assert_eq!((r[0].time.as_str(), r[1].time.as_str(), r[2].time.as_str()), ("14:00", "13:00", "08:00"));
     }
 
-    // The largest real difference is 2 days (Kiritimati UTC+14 vs Pago Pago UTC-11).
+    // Widest pair in the list: Auckland (UTC+13 in January) vs Honolulu (UTC-10).
     #[test]
-    fn two_day_offset_is_possible() {
-        let now = utc(2026, 11, 14, 11, 30); // Pago Pago 00:30 on the 14th, Kiritimati 01:30 on the 15th
-        let pc = date(2026, 11, 14);
-        assert_eq!(day_offset(now, chrono_tz::Pacific::Kiritimati, pc), 1);
-        let pc_pago = now.with_timezone(&chrono_tz::Pacific::Pago_Pago).date_naive();
-        assert_eq!(day_offset(now, chrono_tz::Pacific::Kiritimati, pc_pago), 1);
-        let now = utc(2026, 11, 14, 10, 30); // Pago Pago 23:30 on the 13th, Kiritimati 00:30 on the 15th
-        let pc_pago = now.with_timezone(&chrono_tz::Pacific::Pago_Pago).date_naive();
-        assert_eq!(day_offset(now, chrono_tz::Pacific::Kiritimati, pc_pago), 2);
+    fn auckland_vs_honolulu() {
+        let akl = chrono_tz::Pacific::Auckland;
+        let hnl = chrono_tz::Pacific::Honolulu;
+        let now = utc(2026, 1, 15, 10, 30); // Auckland 23:30 on the 15th, Honolulu 00:30 on the 15th
+        assert_eq!(day_offset(now, akl, now.with_timezone(&hnl).date_naive()), 0);
+        let now = utc(2026, 1, 15, 11, 30); // Auckland 00:30 on the 16th, Honolulu 01:30 on the 15th
+        assert_eq!(day_offset(now, akl, now.with_timezone(&hnl).date_naive()), 1);
+        assert_eq!(day_offset(now, hnl, now.with_timezone(&akl).date_naive()), -1);
         assert_eq!(marker(-2), "\u{2212}2");
     }
 }

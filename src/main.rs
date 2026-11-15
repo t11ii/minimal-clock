@@ -13,7 +13,12 @@ fn main() {
 
     #[cfg(not(windows))]
     {
-        // The UI only exists on Windows; on other systems print what it would show.
+        // The UI only exists on Windows; on other systems print what it would show
+        // (or, with --config, the settings file a first start would create).
+        if std::env::args().any(|a| a == "--config") {
+            print!("{}", model::default_config());
+            return;
+        }
         let cfg = model::Config::default();
         let now = chrono::Utc::now();
         let pc = chrono::Local::now().date_naive();

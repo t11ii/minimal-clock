@@ -1,12 +1,12 @@
 [package]
 name = "minimal-clock"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Minimal 24h world clock (3 rows) drawn on the Windows 11 taskbar, with +1/-1 day markers"
 
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
-chrono-tz = "0.10"
+chrono-tz = { version = "0.10", features = ["filter-by-regex"] }
 
 [target.'cfg(windows)'.dependencies.windows-sys]
 version = "0.61"
